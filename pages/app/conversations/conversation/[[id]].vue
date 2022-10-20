@@ -110,7 +110,9 @@ if (!conversation.value) {
     notFound.value = true
 }
 
-let message = ref(`data:text/html;base64,${await base64arraybuffer(new TextEncoder().encode(conversation.value.initMessage + `<style>
+let message = ref(`data:text/html;base64,${await base64arraybuffer(new TextEncoder().encode(conversation.value.initMessage + `
+    <meta charset="utf8"/>
+    <style>
     *{font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     color:#d4d4d4
 }
