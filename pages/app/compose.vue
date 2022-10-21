@@ -227,7 +227,7 @@ async function createConversation() {
         if (status != "Not found") {
             clearInterval(check)
             sending.value = false;
-            router.push("/conversations/?id=" + id)
+            router.push("/conversations/conversation?id=" + id)
         }
     }, 3000)
     // sending.value = false
