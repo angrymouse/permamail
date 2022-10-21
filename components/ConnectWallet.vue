@@ -73,6 +73,7 @@ async function connectArweaveApp() {
 	let address = await webwallet.namespaces.arweaveWallet.getActiveAddress()
 	account.value = await accountTools.get(address);
 	wallet.value = webwallet.namespaces.arweaveWallet;
+	window.arweaveWallet = webwallet.namespaces.arweaveWallet
 	// window.arweaveWallet = webwallet.namespaces.arweaveWallet
 	// router.push("/app/lobby");
 	conversationsLoader(address)

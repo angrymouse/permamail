@@ -43,7 +43,7 @@
     <div class="flex flex-col justify-center items-center pb-4 h-full" v-else>
         <article class="prose prose-stale text-center flex flex-col items-center justify-center">
             <h1 class="w-full text-center p-2 ">Error 404!</h1>
-            <p class="text-center">Conversation with id {{$route.params.id}} wasn't found or is invalid!</p>
+            <p class="text-center">Conversation with id {{$route.query.id}} wasn't found or is invalid!</p>
 
         </article>
     </div>
@@ -91,7 +91,7 @@ onMounted(() => {
 const accountTools = accountToolsState.value
 let conversationInitMeta
 try {
-    conversationInitMeta = await ardb.search("transaction").id(route.params.id).findOne()
+    conversationInitMeta = await ardb.search("transaction").id(route.query.id).findOne()
 
 } catch (e) {
     notFound.value = true
@@ -99,7 +99,7 @@ try {
 
 }
 let conversation = ref(false)
-let conversationDataRaw = await arweave.api.get(route.params.id)
+let conversationDataRaw = await arweave.api.get(route.query.id)
 console.log(conversationDataRaw)
 if (conversationDataRaw.status != 200 && conversationDataRaw.status != 302 && conversationDataRaw.status != 202) {
     notFound.value = true

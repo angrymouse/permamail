@@ -221,13 +221,13 @@ async function createConversation() {
     for (let member of [...members.value]) {
         transaction.addTag("Member", member.addr)
     }
-    let { id } = await window.arweaveWallet.dispatch(transaction)
+    let { id } = await wallet.value.dispatch(transaction)
     let check = setInterval(async () => {
         let status = await fetch(`https://arweave.net/${id}`).then(res => res.text())
-        if (status != "Not found.") {
+        if (status != "Not found") {
             clearInterval(check)
             sending.value = false;
-            router.push("/conversations/" + id)
+            router.push("/conversations/?id=" + id)
         }
     }, 3000)
     // sending.value = false

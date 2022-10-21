@@ -19,7 +19,7 @@
                     </div>
 
                 </div>
-                <NuxtLink :to="'/app/conversations/conversation/'+conversation.id"
+                <NuxtLink :to="'/app/conversations/conversation/?id='+conversation.id"
                     class="h-full w-full text-center flex flex-row justify-start items-center ml-4 font-semibold text-lg">
                     {{conversation.topic}}</NuxtLink>
             </div>
