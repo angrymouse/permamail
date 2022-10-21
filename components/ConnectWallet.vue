@@ -96,18 +96,22 @@ async function connectArconnect() {
 	setInterval(() => conversationsLoader(address), 10000)
 	// router.push("/app/lobby");
 }
+let lock = false
 function conversationsLoader(address) {
-	ardb.search('transactions').tags([{ name: 'Protocol-Name', values: ['PermaMailv0'] }, { name: "Member", values: [address] }, { name: "PM-Type", values: ["Conversation-Init"] }]).exclude("anchor").findAll().then(c => {
+	if (lock) { return }
+	lock = true
+	ardb.search('transactions').tags([{ name: 'Protocol-Name', values: ['PermaMailv0'] }, { name: "Member", values: [address] }, { name: "PM-Type", values: ["Conversation-Init"] }]).exclude("anchor").findAll().then(async c => {
 		let differs = c.filter(conv => !conversations.value.find(co => co.id === conv.id))
-
-		differs.forEach(async conversation => {
+		console.log(differs)
+		await Promise.all(differs.map(async conversation => {
 			let raw = await fetch(`https://arweave.net/${conversation.id}`).then(res => res.text())
 
 			let parsed = await parseConversationInit(raw, conversation, accountTools, arweave.value)
 			if (parsed) {
 				conversations.value.push(parsed)
 			} else { conversations.value.push({ id: conversation.id, corrupted: true }) }
-		})
+		}))
+		lock = false
 
 	})
 

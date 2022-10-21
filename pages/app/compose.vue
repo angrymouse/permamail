@@ -98,7 +98,7 @@ let router = useRouter()
 onMounted(() => {
     nextTick(() => {
         setTimeout(async () => {
-            myAddress.value = await window.arweaveWallet.getActiveAddress()
+            myAddress.value = await wallet.value.getActiveAddress()
 
             addMember(myAddress.value)
         }, 50)// It's not me dumb, it's ArConnect not resolving promise if page just loaded
@@ -132,8 +132,8 @@ async function addMember(id) {
     let profile
     try {
         console.log("|", address, myAddress.value)
-        pubkey = (address === myAddress.value ? await window.arweaveWallet.getActivePublicKey() : await fetchPubkey(address))
-        console.log("pubkey", pubkey, await window.arweaveWallet.getActivePublicKey(), await fetchPubkey(address))
+        pubkey = (address === myAddress.value ? await wallet.value.getActivePublicKey() : await fetchPubkey(address))
+        console.log("pubkey", pubkey, await wallet.value.getActivePublicKey(), await fetchPubkey(address))
         if (!pubkey) {
             membersErrors.value.push("Cannot fetch pubkey of " + id + "! You can add only addresses that already had submitted transactions to arweave network!")
         }
