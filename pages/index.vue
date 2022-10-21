@@ -1,20 +1,15 @@
 <template>
 	<div class="hero min-h-screen bg-base-200">
 		<div class="hero-content text-center">
-			<div
-				class="
+			<div class="
 					max-w-md
 					flex
 					justify-center
 					flex-col
 					items-center
 					align-items-center
-				"
-			>
-				<img
-					src="~/assets/permamail-01.png"
-					class="w-40 d-flex justify-self-center"
-				/>
+				">
+				<img src="@/assets/permamail-01.png" class="w-40 d-flex justify-self-center" />
 				<h1 class="text-5xl font-bold">PermaMail</h1>
 				<p class="py-6">
 					Tired of monopolized email/messaging services? Already shared phone,
