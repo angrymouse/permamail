@@ -130,7 +130,7 @@ async function addMember(id) {
 
     let acc = await accountTools.find(id.startsWith("@") ? id.slice(1) : id)
     console.log(acc)
-    address = acc.addr
+    address = acc.addr || id
     console.log("found", address)
 
 
