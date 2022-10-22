@@ -130,7 +130,7 @@ async function addMember(id) {
 
     let acc = await accountTools.find(id.startsWith("@") ? id.slice(1) : id)
     console.log(acc)
-    address = acc.addr || id
+    address = acc.addr ? acc.addr : id
     console.log("found", address)
 
 
@@ -138,7 +138,7 @@ async function addMember(id) {
     let profile
     try {
         console.log("|", address, myAddress.value)
-        console.log(await fetchPubkey(address))
+
         pubkey = (address === myAddress.value ? await wallet.value.getActivePublicKey() : await fetchPubkey(address))
         console.log("pubkey", pubkey, await wallet.value.getActivePublicKey(), await fetchPubkey(address))
         if (!pubkey) {
