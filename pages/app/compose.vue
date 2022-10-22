@@ -78,6 +78,7 @@
     </div>
 </template>
 <script setup>
+import Arweave from 'arweave';
 import Account from 'arweave-account'
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
@@ -85,8 +86,14 @@ import { decode } from 'punycode';
 const accountTools = new Account();
 let wallet = useState("wallet", () => null);
 let account = useState("account", () => null);
-let arweaveState = useState("arweave", () => null);
-let arweave = arweaveState.value
+
+let arweave = Arweave.init({
+    host: 'arweave.net',
+    port: 443,
+    protocol: 'https',
+    timeout: 60000,
+    logging: false,
+})
 let currentAddingMember = ref("")
 let membersErrors = ref([])
 let myAddress = ref(null)
@@ -95,17 +102,17 @@ let initMessage = ref("")
 let topic = ref("")
 let sending = ref(false)
 let router = useRouter()
-onMounted(() => {
-    nextTick(() => {
-        setTimeout(async () => {
-            myAddress.value = await wallet.value.getActiveAddress()
 
-            addMember(myAddress.value)
-        }, 50)// It's not me dumb, it's ArConnect not resolving promise if page just loaded
+nextTick(() => {
+    setTimeout(async () => {
+        myAddress.value = await wallet.value.getActiveAddress()
 
-    })
+        addMember(myAddress.value)
+    }, 50)// It's not me dumb, it's ArConnect not resolving promise if page just loaded
 
 })
+
+
 
 
 
@@ -117,21 +124,21 @@ function addMemberByButton() {
 // let members = ref([{ address: await wallet.value.getActiveAddress(), handle: account.value.handle }])
 async function addMember(id) {
     console.log(id)
+    if (!id) { return }
     membersErrors.value = []
     let address = null
-    if (id.startsWith("@") && id.split("#").length == 2 && id.split("@").length == 2) {
-        let acc = await accountTools.find(id.slice(1))
-        console.log(acc)
-        address = acc.addr
-        console.log("found", address)
-    } else {
-        address = id
-    }
+
+    let acc = await accountTools.find(id.startsWith("@") ? id.slice(1) : id)
+    console.log(acc)
+    address = acc.addr
+    console.log("found", address)
+
 
     let pubkey;
     let profile
     try {
         console.log("|", address, myAddress.value)
+        console.log(await fetchPubkey(address))
         pubkey = (address === myAddress.value ? await wallet.value.getActivePublicKey() : await fetchPubkey(address))
         console.log("pubkey", pubkey, await wallet.value.getActivePublicKey(), await fetchPubkey(address))
         if (!pubkey) {
@@ -153,8 +160,9 @@ async function addMember(id) {
 
 }
 const fetchPubkey = async address => {
-    let txid = await arweave.wallets.getLastTransactionID(address)
 
+    let txid = await arweave.wallets.getLastTransactionID(address)
+    console.log(txid)
     if (txid === '') {
         return undefined
     }
@@ -178,7 +186,7 @@ const importPubkey = async stringPubkey => {
 
     var algo = { name: 'RSA-OAEP', hash: { name: 'SHA-256' } }
 
-    return await crypto.subtle.importKey('jwk', keyData, algo, false, ['encrypt'])
+    return await crypto.subtle.importKey('jwk', keyData, algo, true, ['encrypt'])
 }
 async function removeMember(addr) {
     members.value = members.value.filter(mem => mem.addr !== addr)
