@@ -127,8 +127,10 @@ async function addMember(id) {
     if (!id) { return }
     membersErrors.value = []
     let address = null
-
-    let acc = await accountTools.find(id.startsWith("@") ? id.slice(1) : id)
+    if (id[0] == "@") {
+        id = id.slice(1)
+    }
+    let acc = await accountTools.find(id)
     console.log(acc)
     address = acc ? acc.addr : id
     console.log("found", address)
@@ -140,7 +142,7 @@ async function addMember(id) {
         console.log("|", address, myAddress.value)
 
         pubkey = (address === myAddress.value ? await wallet.value.getActivePublicKey() : await fetchPubkey(address))
-        console.log("pubkey", pubkey, await wallet.value.getActivePublicKey(), await fetchPubkey(address))
+        // console.log("pubkey", pubkey, await wallet.value.getActivePublicKey(), await fetchPubkey(address))
         if (!pubkey) {
             membersErrors.value.push("Cannot fetch pubkey of " + id + "! You can add only addresses that already had submitted transactions to arweave network!")
         }
