@@ -232,7 +232,12 @@ async function createConversation() {
         transaction.addTag("Member", member.addr)
     }
     console.log(window.arweaveWallet)
-    let { id } = await window.arweaveWallet.dispatch(transaction)
+    let id = null;
+    try {
+        id = await window.arweaveWallet.dispatch(transaction)
+    } catch (e) {
+        console.log("ERROR DURING DISPATCH", e)
+    }
     console.log("id", id)
     let check = setInterval(async () => {
         let status = await fetch(`https://arweave.net/${id}`).then(res => res.text())
