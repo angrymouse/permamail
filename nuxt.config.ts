@@ -18,16 +18,6 @@ export default defineNuxtConfig({
     },
   buildModules: [
     // ...
-    [
-      '@pinia/nuxt',
-      {
-        autoImports: [
-          // automatically imports `usePinia()`
-          'defineStore',
-          // automatically imports `usePinia()` as `usePiniaStore()`
-          ['defineStore', 'definePiniaStore'],
-        ],
-      },
-    ],
+  
   ],
 })
