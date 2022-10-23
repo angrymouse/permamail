@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   
   modules: ['@nuxtjs/tailwindcss'],
   ssr: false,
-  mode: "ssg",
+  mode: "spa",
   target:"static",
       colorMode: {
     dataValue: "halloween"

@@ -68,7 +68,7 @@
 
             </div>
         </div>
-        <button class="btn btn-secondary btn-lg" @click="createConversation">Start conversation</button>
+        <button class="btn btn-secondary btn-lg" @click.prevent="createConversation()">Start conversation</button>
     </div>
     <div v-else class="flex flex-col justify-center items-center h-full w-full">
         <article class="prose prose-stale text-center flex flex-col items-center">
@@ -231,7 +231,9 @@ async function createConversation() {
     for (let member of [...members.value]) {
         transaction.addTag("Member", member.addr)
     }
+
     let { id } = await wallet.value.dispatch(transaction)
+    console.log("id", id)
     let check = setInterval(async () => {
         let status = await fetch(`https://arweave.net/${id}`).then(res => res.text())
         if (status != "Not found") {
