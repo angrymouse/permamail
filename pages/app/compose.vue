@@ -231,7 +231,7 @@ async function createConversation() {
     for (let member of [...members.value]) {
         transaction.addTag("Member", member.addr)
     }
-
+    console.log(window.arweaveWallet)
     let { id } = await window.arweaveWallet.dispatch(transaction)
     console.log("id", id)
     let check = setInterval(async () => {
