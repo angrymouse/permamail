@@ -22,23 +22,40 @@
 
 
         </div>
-        <div class="flex flex-col w-full lg:w-1/2 h-full ">
-            <iframe sandbox :src="message"
+        <div class="flex flex-col w-full lg:w-1/2 h-full " v-for="msg of messages">
+            <iframe sandbox :src="msg.content"
                 class="overflow-auto h-96 w-full  rounded-t-lg bg-base-300 mt-2 mb-0 rounded-br-lg" />
-            <div :data-tip="conversation.creator.addr"
+            <div :data-tip="msg.author.addr"
                 class="tooltip b-all-without-content tooltip-primary bg-base-300  hover:bg-base-100 transition-all  rounded-t-0 rounded-b-lg text-base-content w-max p-2 text-center flex flex-row justify-between items-center">
                 <div class="avatar h-full w-[2rem] mr-2">
                     <div class="w-full rounded-full">
-                        <img :src="conversation.creator.profile.avatarURL" />
+                        <img :src="msg.author.profile.avatarURL" />
                     </div>
-                </div> {{conversation.creator.handle}}
+                </div> {{msg.author.handle}}
 
-                <div class="ml-2 badge badge-info h-full" v-if="conversation.creator.addr==myAddress">
+                <div class="ml-2 badge badge-info h-full" v-if="msg.author.addr==myAddress">
                     You
                 </div>
             </div>
         </div>
+        <div class="w-full lg:w-1/2 text-neutral-content my-4 ">
+            <div class="items-center text-center w-full">
+                <h2 class="font-bold text-lg mb-2">Write new message in this conversation</h2>
 
+                <template v-if="!sendingMessage">
+                    <QuillEditor v-model:content="replyingMessage" contentType="html" theme="snow" toolbar="essential"
+                        class="w-full min-h-[12rem] " />
+                    <div class="flex w-full flex-raw justify-end mt-4"><button
+                            @click.prevent="sendMessageInConversation" class="btn btn-secondary">Send
+                            message</button>
+                    </div>
+                </template>
+
+
+
+
+            </div>
+        </div>
     </div>
     <div class="flex flex-col justify-center items-center pb-4 h-full" v-else>
         <article class="prose prose-stale text-center flex flex-col items-center justify-center">
@@ -53,8 +70,11 @@ import { ArweaveWebWallet } from "arweave-wallet-connector";
 import Account from "arweave-account";
 import Arweave from 'arweave';
 import ArDB from 'ardb';
+import { QuillEditor } from '@vueup/vue-quill'
+import '@vueup/vue-quill/dist/vue-quill.snow.css';
 import base64arraybuffer from "@/utils/b64arraybuffer"
 import parseConversationInit from "@/utils/parseConversationInit"
+import downloadConversationMessages from "@/utils/downloadConversationMessages"
 const wallet = useState("wallet", () => null);
 const route = useRoute()
 const arweaveState = useState("arweave", () => Arweave.init({
@@ -75,7 +95,9 @@ let accountToolsState = useState("accountTools", () => new Account({
     cacheSize: 100,
     cacheTime: 60,
 }))
+let replyingMessage = ref("")
 let notFound = ref(false);
+let sendingMessage = ref(false)
 let conversationInfo = ref({})
 let myAddress = ref(null)
 onMounted(() => {
@@ -109,13 +131,37 @@ if (conversationDataRaw.status != 200 && conversationDataRaw.status != 302 && co
 if (!conversation.value) {
     notFound.value = true
 }
+let messages = ref([])
+messages.value = await downloadConversationMessages(conversation.value, ardb, arweave)
+console.log(messages.value)
 
-let message = ref(`data:text/html;base64,${await base64arraybuffer(new TextEncoder().encode(conversation.value.initMessage + `
-    <meta charset="utf8"/>
-    <style>
-    *{font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    color:#d4d4d4
+async function sendMessageInConversation() {
+    if (replyingMessage.value.trim() == "") { return }
+    sendingMessage.value = true
+    let replyingMessageIv = new Uint8Array(16)
+    await crypto.getRandomValues(replyingMessageIv)
+    let transaction = await arweave.createTransaction({
+        data: await base64arraybuffer(await crypto.subtle.encrypt({ name: "AES-GCM", iv: replyingMessageIv }, conversation.value.communicationKey, new TextEncoder().encode(replyingMessage.value))) + ":" + await base64arraybuffer(replyingMessageIv),
+    })
+    transaction.addTag("Protocol-Name", "PermaMailv0")
+    transaction.addTag("PM-Type", "Conversation-Message")
+    transaction.addTag("Conversation-ID", conversation.value.id)
+    let id = null;
+    try {
+        id = (await window.arweaveWallet.dispatch(transaction)).id
+    } catch (e) {
+        console.log("ERROR DURING DISPATCH", e)
+    }
+    console.log("id", id)
+    let check = setInterval(async () => {
+        let status = await fetch(`https://arweave.net/${id}`).then(res => res.text())
+        if (status != "Not found") {
+            clearInterval(check)
+            replyingMessage.value = ""
+            sendingMessage.value = false;
+
+        }
+    }, 3000)
 }
-    </style>`))}`)
-console.log(conversation.value)
+// console.log(conversation.value)
 </script>

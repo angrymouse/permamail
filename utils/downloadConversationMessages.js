@@ -1,102 +1,85 @@
 import b64hash from "./b64hash";
 import base64DecToArr from "./base64dectoarr";
-
+import base64arraybuffer from "@/utils/b64arraybuffer";
 export default async function parseConversationInit(
 	conversation,
-	{ id, tags, owner },
-	accountTools,
+	ardb,
 	arweave
 ) {
-	if (init.split(";").length != 4) {
-		return false;
-	}
-	let [keyHash, keyShares, encryptedTopic, encryptedInitMessage] =
-		init.split(";");
-	keyShares = keyShares.split(":");
-	let decryptedKey;
-	let topic;
-	let initMessage;
-	let members = [];
-	for (let share of keyShares) {
-		let decrypted;
+	let messages = [];
+	messages.push({
+		author: conversation.creator,
+		content: `data:text/html;base64,${await base64arraybuffer(
+			new TextEncoder().encode(
+				conversation.initMessage +
+					`
+    <meta charset="utf8"/>
+    <style>
+    *{font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    color:#d4d4d4
+}
+    </style>`
+			)
+		)}`,
+	});
+	let replies = await ardb
+		.search("transactions")
+		.from(conversation.members.map((member) => member.addr))
+		.tags([
+			{
+				name: "Protocol-Name",
+				values: ["PermaMailv0"],
+			},
+			{
+				name: "PM-Type",
+				values: ["Conversation-Message"],
+			},
+			{ name: "Conversation-ID", values: [conversation.id] },
+		])
+		.exclude("anchor")
+		.findAll();
+	for (let reply of replies) {
+		let encryptedMessage = await fetch(`https://arweave.net/${reply.id}`).then(
+			(res) => res.text()
+		);
+
+		let decryptedMessage;
 		try {
-			decrypted = await window.arweaveWallet.decrypt(base64DecToArr(share), {
-				name: "RSA-OAEP",
-			});
-		} catch (e) {
-			console.error(e);
-			continue;
-			return;
-		}
-		if ((await b64hash(decrypted)) == keyHash) {
-			decryptedKey = await window.crypto.subtle.importKey(
-				"jwk",
-				{
-					kty: "oct",
-					k: new TextDecoder().decode(decrypted),
-					alg: "A256GCM",
-					ext: true,
-				},
-				{ name: "AES-GCM" },
-				true,
-				["encrypt", "decrypt"]
+			decryptedMessage = new TextDecoder().decode(
+				await crypto.subtle.decrypt(
+					{
+						name: "AES-GCM",
+						iv: base64DecToArr(encryptedMessage.split(":")[1]), //The initialization vector you used to encrypt
+						//The addtionalData you used to encrypt (if any)
+						//The tagLength you used to encrypt (if any)
+					},
+					conversation.communicationKey,
+					base64DecToArr(encryptedMessage.split(":")[0])
+				)
 			);
+		} catch (e) {
+			console.log(e);
+			continue;
 		}
+
+		messages.push({
+			author: conversation.members.find(
+				(member) => member.addr == reply.owner.address
+			),
+			content: `data:text/html;base64,${await base64arraybuffer(
+				new TextEncoder().encode(
+					decryptedMessage +
+						`
+    <meta charset="utf8"/>
+    <style>
+    *{font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    color:#d4d4d4
+}
+    </style>`
+				)
+			)}`,
+		});
 	}
-	if (!decryptedKey) {
-		return false;
-	}
-	if (encryptedTopic.split(":").length != 2) {
-		return false;
-	}
-	if (encryptedInitMessage.split(":").length != 2) {
-		return false;
-	}
-	try {
-		topic = new TextDecoder().decode(
-			await crypto.subtle.decrypt(
-				{
-					name: "AES-GCM",
-					iv: base64DecToArr(encryptedTopic.split(":")[0]), //The initialization vector you used to encrypt
-					//The addtionalData you used to encrypt (if any)
-					//The tagLength you used to encrypt (if any)
-				},
-				decryptedKey,
-				base64DecToArr(encryptedTopic.split(":")[1])
-			)
-		);
-	} catch (e) {
-		return false;
-	}
-	try {
-		initMessage = new TextDecoder().decode(
-			await crypto.subtle.decrypt(
-				{
-					name: "AES-GCM",
-					iv: base64DecToArr(encryptedInitMessage.split(":")[0]), //The initialization vector you used to encrypt
-					//The addtionalData you used to encrypt (if any)
-					//The tagLength you used to encrypt (if any)
-				},
-				decryptedKey,
-				base64DecToArr(encryptedInitMessage.split(":")[1])
-			)
-		);
-	} catch (e) {
-		return false;
-	}
-	members = await Promise.all(
-		tags
-			.filter((tag) => tag.name == "Member")
-			.map(async (member) => await accountTools.get(member.value))
-	);
-	return {
-		id,
-		raw: init,
-		topic,
-		initMessage,
-		members,
-		communicationKey: decryptedKey,
-		corrupted: false,
-		creator: await accountTools.get(owner.address),
-	};
+	console.log("replies", replies);
+	return messages;
 }

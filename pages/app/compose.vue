@@ -234,7 +234,7 @@ async function createConversation() {
     console.log(window.arweaveWallet)
     let id = null;
     try {
-        id = await window.arweaveWallet.dispatch(transaction)
+        id = (await window.arweaveWallet.dispatch(transaction)).id
     } catch (e) {
         console.log("ERROR DURING DISPATCH", e)
     }
