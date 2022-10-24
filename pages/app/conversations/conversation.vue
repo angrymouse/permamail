@@ -133,7 +133,9 @@ if (!conversation.value) {
 }
 let messages = ref([])
 messages.value = await downloadConversationMessages(conversation.value, ardb, arweave)
-console.log(messages.value)
+setInterval(async () => {
+    messages.value = await downloadConversationMessages(conversation.value, ardb, arweave)
+}, 3000)
 
 async function sendMessageInConversation() {
     if (replyingMessage.value.trim() == "") { return }
