@@ -22,22 +22,24 @@ export default async function parseConversationInit(
 			)
 		)}`,
 	});
-	let replies = await ardb
-		.search("transactions")
-		.from(conversation.members.map((member) => member.addr))
-		.tags([
-			{
-				name: "Protocol-Name",
-				values: ["PermaMailv0"],
-			},
-			{
-				name: "PM-Type",
-				values: ["Conversation-Message"],
-			},
-			{ name: "Conversation-ID", values: [conversation.id] },
-		])
-		.exclude("anchor")
-		.findAll();
+	let replies = (
+		await ardb
+			.search("transactions")
+			.from(conversation.members.map((member) => member.addr))
+			.tags([
+				{
+					name: "Protocol-Name",
+					values: ["PermaMailv0"],
+				},
+				{
+					name: "PM-Type",
+					values: ["Conversation-Message"],
+				},
+				{ name: "Conversation-ID", values: [conversation.id] },
+			])
+			.exclude("anchor")
+			.findAll()
+	).reverse();
 	for (let reply of replies) {
 		let encryptedMessage = await fetch(`https://arweave.net/${reply.id}`).then(
 			(res) => res.text()
