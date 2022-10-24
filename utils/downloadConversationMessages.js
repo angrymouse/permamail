@@ -40,7 +40,7 @@ export default async function parseConversationInit(
 			.exclude("anchor")
 			.findAll()
 	).reverse();
-	for (let reply of replies) {
+	for await (let reply of replies) {
 		let encryptedMessage = await fetch(`https://arweave.net/${reply.id}`).then(
 			(res) => res.text()
 		);
