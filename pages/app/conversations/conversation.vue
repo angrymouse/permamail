@@ -22,8 +22,10 @@
 
 
         </div>
-        <div class="flex flex-col w-full lg:w-1/2 h-full " v-for="msg of messages">
-            <iframe sandbox :src="msg.content"
+        <div class="flex flex-col w-full lg:w-1/2 h-full " v-for="msg,mi of messages" ref="conversationMessages"
+            :style="{visibility:typeof iframeHeights[mi]=='undefined'?'hidden':'visible'}" :key="msg.id">
+            <iframe sandbox="allow-same-origin" :srcdoc="msg.content"
+                :style="{height:typeof iframeHeights[mi]=='undefined'?'100px':iframeHeights[mi]+'px', visibility:typeof iframeHeights[mi]=='undefined'?'hidden':'visible'}"
                 class="overflow-auto h-96 w-full  rounded-t-lg bg-base-300 mt-2 mb-0 rounded-br-lg" />
             <div :data-tip="msg.author.addr"
                 class="tooltip b-all-without-content tooltip-primary bg-base-300  hover:bg-base-100 transition-all  rounded-t-0 rounded-b-lg text-base-content w-max p-2 text-center flex flex-row justify-between items-center">
@@ -95,11 +97,13 @@ let accountToolsState = useState("accountTools", () => new Account({
     cacheSize: 100,
     cacheTime: 60,
 }))
+let conversationMessages = ref([])
 let replyingMessage = ref("")
 let notFound = ref(false);
 let sendingMessage = ref(false)
 let conversationInfo = ref({})
 let myAddress = ref(null)
+let iframeHeights = ref({})
 onMounted(() => {
     nextTick(() => {
         setTimeout(async () => {
@@ -133,8 +137,25 @@ if (!conversation.value) {
 }
 let messages = ref([])
 messages.value = await downloadConversationMessages(conversation.value, ardb, arweave)
+onMounted(() => {
+    nextTick(() => {
+        setTimeout(async () => {
+            conversationMessages.value.forEach((message, index) => {
+
+                iframeHeights.value[index] = (message.firstChild.contentWindow.document.body.scrollHeight)
+
+            })
+        }, 50)
+    })
+})
 setInterval(async () => {
     messages.value = await downloadConversationMessages(conversation.value, ardb, arweave)
+    conversationMessages.value.forEach((message, index) => {
+
+        iframeHeights.value[index] = (message.firstChild.contentWindow.document.body.scrollHeight)
+
+    })
+
 }, 3000)
 
 async function sendMessageInConversation() {

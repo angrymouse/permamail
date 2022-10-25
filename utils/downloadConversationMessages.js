@@ -9,18 +9,7 @@ export default async function parseConversationInit(
 	let messages = [];
 	messages.push({
 		author: conversation.creator,
-		content: `data:text/html;base64,${await base64arraybuffer(
-			new TextEncoder().encode(
-				conversation.initMessage +
-					`
-    <meta charset="utf8"/>
-    <style>
-    *{font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    color:#d4d4d4
-}
-    </style>`
-			)
-		)}`,
+		content: makeMessageCode(conversation.initMessage),
 	});
 	let replies = (
 		await ardb
@@ -68,20 +57,36 @@ export default async function parseConversationInit(
 			author: conversation.members.find(
 				(member) => member.addr == reply.owner.address
 			),
-			content: `data:text/html;base64,${await base64arraybuffer(
-				new TextEncoder().encode(
-					decryptedMessage +
-						`
-    <meta charset="utf8"/>
-    <style>
-    *{font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-    color:#d4d4d4
-}
-    </style>`
-				)
-			)}`,
+			content: makeMessageCode(decryptedMessage),
 		});
 	}
 	console.log("replies", replies);
 	return messages;
+}
+function makeMessageCode(text) {
+	return (
+		`<html><head><meta charset="utf8"/></head><body>` +
+		text +
+		`
+   
+    <style>
+    body{
+        height:max-content;
+        display:inline-block;
+        position:relative;
+        margin-top:0;
+        margin-bottom:0;
+        
+    }
+    html{
+        height:max-content;
+        margin:0;
+        padding:0
+      
+    }
+    *{font-family:ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    color:#d4d4d4
+}
+    </style></body></html>`
+	);
 }
